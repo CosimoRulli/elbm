@@ -78,6 +78,6 @@ add_subdirectory(external/cmd_line_parser)
 include_directories(${PROJECT_SOURCE_DIR}/external/cmd_line_parser)
 
 
-add_executable(perf_1bit_vs_1bit src/perf_1bit_vs_1bit.cpp)
-target_link_libraries(perf_1bit_vs_1bit_multiplication)
+add_executable(perf_1bit_vs_1bit src/perf_1_bit_vs_1_bit.cpp)
+target_link_libraries(perf_1bit_vs_1bit)
 
