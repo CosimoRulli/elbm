@@ -43,11 +43,11 @@ void argparse(cmd_line_parser::parser& parser) {
                false                    // not boolean option: expected a value after the shorthand
     );
 
-    parser.add("Check",       // name
-               "Check the result",  // description
-               "-c",                    // shorthand
-               true                    // boolean option: expected no value after the shorthand
-    );
+    // parser.add("Check",       // name
+    //            "Check the result",  // description
+    //            "-c",                    // shorthand
+    //            true                    // boolean option: expected no value after the shorthand
+    // );
 
 }
 
@@ -74,13 +74,14 @@ int main(int argc, char**argv) {
     argparse(parser);
     if (!parser.parse()) return 1;
 
-    size_t M = parser.get<size_t>("M"); ;
-    size_t K = parser.get<size_t>("K"); ;
-    size_t N = parser.get<size_t>("N"); ;
+    size_t M = parser.get<size_t>("M"); 
+    size_t K = parser.get<size_t>("K"); 
+    size_t N = parser.get<size_t>("N"); 
 
     auto method_id = parser.get<uint32_t>("Method");
     Method method {method_id};
-    bool check = parser.get<bool>("Check");
+    //bool check = parser.get<bool>("Check");
+    bool check = true;
     if (check) n_run=1;
 
     cout<< "M " << M << "\n";

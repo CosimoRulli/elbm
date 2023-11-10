@@ -81,3 +81,6 @@ include_directories(${PROJECT_SOURCE_DIR}/external/cmd_line_parser)
 add_executable(perf_1bit_vs_1bit src/perf_1_bit_vs_1_bit.cpp)
 target_link_libraries(perf_1bit_vs_1bit)
 
+add_executable(example_for_python src/example_for_python.cpp)
+target_link_libraries(example_for_python)
+

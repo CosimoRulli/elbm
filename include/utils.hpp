@@ -125,7 +125,6 @@ size_t check_equality(const T1 *A, const T2* B, const size_t M, const size_t N, 
 
 vector<uint64_t> convert_float_to_bin_64bit(const vector<float>& int_vec) {
     size_t new_size = int_vec.size() / 64;
-    cout<<"New size "<<new_size<<"\n";
 
     vector<uint64_t> binary_vec(new_size);
     uint64_t tbin;
