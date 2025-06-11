@@ -3,14 +3,14 @@
 #include <vector>
 
 #include "parser.hpp"
-#include "utils.hpp"
-#include "1_bit_vs_1_bit_kernels.hpp"
-#include "tuple"
 
+#include "tuple"
+#include "1_bit_vs_2_bits_kernels.hpp"
+#include "utils.hpp"
 
 enum class Method {
-    no_kernel, // 0
-    kernel_bin_8x8, // 1
+    no_kernel,
+    kernel8x8,
 };
 
 void argparse(cmd_line_parser::parser& parser) {
@@ -70,7 +70,7 @@ void timing_print(std::string name, std::vector<uint64_t> timing, size_t m, size
 
 int main(int argc, char**argv) {
     size_t n_run = 1000;
-    const float toll = 0.0001;
+    const float toll = 0.01;
 
     cmd_line_parser::parser parser(argc, argv);
 
@@ -82,7 +82,6 @@ int main(int argc, char**argv) {
     size_t N = parser.get<size_t>("N"); ;
 
     auto method_id = parser.get<uint32_t>("Method");
-    //auto method_id = 2;
     Method method {method_id};
     bool check = parser.get<bool>("Check");
     if (check) n_run=1;
@@ -90,38 +89,43 @@ int main(int argc, char**argv) {
     cout<< "M " << M << "\n";
     cout<< "K " << K << "\n";
     cout<< "N " << N << "\n";
+
     int pad = 16; 
     size_t original_M = M;
     size_t original_N = N;
     M = (M + (pad-1))/pad * pad;
     N = (N + (pad-1))/pad * pad;
-
+    
     if (K < 64 || K % 64 !=0){
         std::cout<<"K must be divisible by 64\n";
         return 1;
     }
 
+    float s = 0.3; //scaler for 2bits quantization
+
     vector<float> A = generate_bin_mat(M, K);
-    auto B = generate_bin_mat(K, N);
+    auto B = generate_2bits_mat(K, N, s);
+
     vector<float> C(M*N, 0.);
 
     vector<uint64_t> elapsed_times;
     std::string method_name = "";
 
+    bool output_packed = false;
+
     size_t mr, nr;
     switch (method) {
         case Method::no_kernel:
-            method_name = std::string("Matmul_1_1 no_kernel");
-            elapsed_times = measure_time_bin_bin_transposed(A, B, C, M, K, N, n_run);
-            break;
-        case Method::kernel_bin_8x8:
-            method_name = std::string("Matmul_1_1 Kernel 8x8");
-            mr = 8;
-            nr = 8;
-            elapsed_times = measure_time_bin_bin_kernel<kernel_bin_8x8>(A, B, C, M, K, N, mr, nr, n_run);
+            method_name = std::string("Matmul_1_2 no_kernel");
+            elapsed_times = measure_time_1_2_transposed<mult_2bits_avx512_transposed>(A, B, C, M, K, N, s, n_run );
             break;
         
-
+        case Method::kernel8x8:
+            mr = 8;
+            nr = 8;
+            method_name = std::string("Matmul_1_2 Kernel 8x8");
+            elapsed_times = measure_time_1_2_kernel_64_bit<kernel_1_2_8x8>(A, B, C, M, K, N, s, mr, nr, n_run);
+            break;
     }
 
     timing_print(method_name, elapsed_times, original_M, original_N, K);
@@ -130,11 +134,17 @@ int main(int argc, char**argv) {
         std::cout << "Testing correctness...\n";
         vector<float> C_truth(M*N);
         trivial_dense_multiplication(A, B, M, K, N, C_truth);
+        //print_mat(C_truth, M, N);
+        if (output_packed){
+            cout<<"Packing C_truth matrix for comparison\n";
+
+            C_truth = pack_matrix_for_binary_mul(C_truth, M, N);
+        }
+
         auto count = check_equality(C_truth, C, M, N, toll);
         // print_mat(C_truth, M, N);
         // std::cout<<"\n";
         // print_mat(C, M, N);
-
         if(count != 0) {
             std::cout << "ERROR: Wrong result!";
             std::cout << "Number of errors " << count << " \n";

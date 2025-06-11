@@ -1,17 +1,46 @@
-
 #include <iostream>
 #include <vector>
-
+#include <blis.h>
 #include "parser.hpp"
 #include "utils.hpp"
-#include "1_bit_vs_1_bit_kernels.hpp"
 #include "tuple"
 
 
-enum class Method {
-    no_kernel, // 0
-    kernel_bin_8x8, // 1
-};
+vector<uint64_t> measure_time_dense_blis(const vector<float> &A, const vector<float> &B, const size_t M, const size_t K, const size_t N, vector<float> & C, const size_t n_run){
+    // size_t rsa, csa;
+    // size_t rsb, csb;
+    // size_t rsc, csc;
+
+    float alpha = 1.0;
+    float beta = .0;
+    // rsa = 1;
+    // rsb = 1;
+    // rsc = 1;
+    // csc = M;
+    // csa = M;
+    // csb = K;
+
+   vector<uint64_t> elapsed_times;
+
+   //warmup
+   
+   bli_sgemm(BLIS_NO_TRANSPOSE, BLIS_NO_TRANSPOSE, M, N, K, &alpha, A.data(), K, 1, B.data(), N,
+              1, &beta, C.data(), N, 1);
+ 
+   for (size_t run=0; run < n_run; run ++){
+       auto start = std::chrono::high_resolution_clock::now();
+        bli_sgemm(BLIS_NO_TRANSPOSE, BLIS_NO_TRANSPOSE, M, N, K, &alpha, A.data(), K, 1, B.data(), N,
+              1, &beta, C.data(), N, 1);
+       auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start).count();
+       elapsed_times.push_back(elapsed);
+   }
+
+
+   return elapsed_times;
+
+}
+
+
 
 void argparse(cmd_line_parser::parser& parser) {
     // here, we specify some shorthand for *optional* arguments
@@ -37,14 +66,6 @@ void argparse(cmd_line_parser::parser& parser) {
                false                    // not boolean option: expected a value after the shorthand
     );
 
-    parser.add("Method",       // name
-               "Id of the method to test.",  // description
-               "-t",                    // shorthand
-                true, // required
-
-               false                    // not boolean option: expected a value after the shorthand
-    );
-
     parser.add("Check",       // name
                "Check the result",  // description
                "-c",                    // shorthand
@@ -53,8 +74,6 @@ void argparse(cmd_line_parser::parser& parser) {
     );
 
 }
-
-
 
 void timing_print(std::string name, std::vector<uint64_t> timing, size_t m, size_t k, size_t n) {
     auto sep = '\t';
@@ -81,50 +100,22 @@ int main(int argc, char**argv) {
     size_t K = parser.get<size_t>("K"); ;
     size_t N = parser.get<size_t>("N"); ;
 
-    auto method_id = parser.get<uint32_t>("Method");
     //auto method_id = 2;
-    Method method {method_id};
     bool check = parser.get<bool>("Check");
-    if (check) n_run=1;
+    if (check) n_run = 1;
 
     cout<< "M " << M << "\n";
     cout<< "K " << K << "\n";
     cout<< "N " << N << "\n";
-    int pad = 16; 
-    size_t original_M = M;
-    size_t original_N = N;
-    M = (M + (pad-1))/pad * pad;
-    N = (N + (pad-1))/pad * pad;
-
-    if (K < 64 || K % 64 !=0){
-        std::cout<<"K must be divisible by 64\n";
-        return 1;
-    }
 
     vector<float> A = generate_bin_mat(M, K);
     auto B = generate_bin_mat(K, N);
     vector<float> C(M*N, 0.);
 
-    vector<uint64_t> elapsed_times;
-    std::string method_name = "";
+    vector<uint64_t> elapsed_times = measure_time_dense_blis(A, B, M, K, N, C, n_run);
+    std::string method_name = "BLIS";
 
-    size_t mr, nr;
-    switch (method) {
-        case Method::no_kernel:
-            method_name = std::string("Matmul_1_1 no_kernel");
-            elapsed_times = measure_time_bin_bin_transposed(A, B, C, M, K, N, n_run);
-            break;
-        case Method::kernel_bin_8x8:
-            method_name = std::string("Matmul_1_1 Kernel 8x8");
-            mr = 8;
-            nr = 8;
-            elapsed_times = measure_time_bin_bin_kernel<kernel_bin_8x8>(A, B, C, M, K, N, mr, nr, n_run);
-            break;
-        
-
-    }
-
-    timing_print(method_name, elapsed_times, original_M, original_N, K);
+    timing_print(method_name, elapsed_times, M, N, K);
 
     if(check) {
         std::cout << "Testing correctness...\n";

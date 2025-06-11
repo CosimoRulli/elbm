@@ -1,0 +1,25 @@
+
+file=$1
+echo -e "lib\tM\tK\tN\tmin_elapsed\tmean_elapsed" > $file
+
+
+declare -a sizes=(
+    "64 576 2916"
+    "128 576 2916"
+    "128 1152 676"
+    "256 1152 676"
+    "256 2304 144"
+    "512 2304 144"
+    "512 4608 25"
+)
+
+for size in "${sizes[@]}";
+do read -a c_size  <<< "$size"
+# if ./build/perf_fbgemm -m ${c_size[0]} -k ${c_size[1]} -n ${c_size[2]} -t 0 -c; then 
+#     ./build/perf_fbgemm -m ${c_size[0]} -k ${c_size[1]} -n ${c_size[2]} -t 0 2>>$file
+# fi
+
+if ./build/perf_bin_multiplication -m ${c_size[0]} -k ${c_size[1]} -n ${c_size[2]} -t 7 -c; then 
+    ./build/perf_bin_multiplication -m ${c_size[0]} -k ${c_size[1]} -n ${c_size[2]} -t 7 2>>$file
+fi
+done
