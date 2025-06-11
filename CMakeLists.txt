@@ -104,6 +104,9 @@ find_library(BLIS_LIB NAMES blis PATHS ${BLIS_DIR}/lib)
 add_executable(perf_1bit_vs_1bit src/perf_1_bit_vs_1_bit.cpp)
 target_link_libraries(perf_1bit_vs_1bit)
 
+add_executable(example_for_python src/example_for_python.cpp)
+target_link_libraries(example_for_python)
+
 add_executable(perf_1bit_vs_2bits src/perf_1_bit_vs_2_bits.cpp)
 target_link_libraries(perf_1bit_vs_2bits)
 
