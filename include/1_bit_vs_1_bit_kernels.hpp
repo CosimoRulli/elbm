@@ -1,6 +1,9 @@
 #pragma once
 #include <cstring>
 #include <immintrin.h>
+
+#include <cstdint>
+
 typedef uint64_t vec512_64 __attribute__ (( vector_size(64) ));
 typedef int64_t vec512_64_uns __attribute__ (( vector_size(64) ));
 

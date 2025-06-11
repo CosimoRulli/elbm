@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(encoding)
-
+project(elbm)
 enable_testing()
 
 if(NOT DEFINED CMAKE_CXX_STANDARD)
@@ -77,28 +76,8 @@ set(CMAKE_CXX_EXTENSIONS YES)
 add_subdirectory(external/cmd_line_parser)
 include_directories(${PROJECT_SOURCE_DIR}/external/cmd_line_parser)
 
-add_subdirectory(external/oneDNN)
-include_directories(${PROJECT_SOURCE_DIR}/external/oneDNN)
 
 
-add_subdirectory(external/FBGEMM)
-#include_directories(${PROJECT_SOURCE_DIR}/external/FBGEMM/include/fbgemm)
-#include_directories(${PROJECT_SOURCE_DIR}/external/FBGEMM/include/)
-#include_directories(${PROJECT_SOURCE_DIR}/external/FBGEMM/)
-
-
-set(DNNL_LIBRARY_TYPE "STATIC")
-set(DNNL_CPU_RUNTIME "OMP")
-set(DNNL_ARCH_OPT_FLAGS "${CMAKE_CXX_FLAGS}")
-set(DNNL_ENABLE_PRIMITIVE_CACHE "ON")
-set(ONEDNN_ENABLE_MAX_CPU_ISA "ON")
-set(DNNL_BUILD_TESTS "OFF")
-set(DNNL_BUILD_EXAMPLES "OFF")
-
-set(BLIS_DIR /home/crulli/crulli/blis)
-include_directories(${BLIS_DIR}/include/blis)
-link_directories(${BLIS_DIR}/lib)
-find_library(BLIS_LIB NAMES blis PATHS ${BLIS_DIR}/lib)
 
 
 add_executable(perf_1bit_vs_1bit src/perf_1_bit_vs_1_bit.cpp)
@@ -113,11 +92,39 @@ target_link_libraries(perf_1bit_vs_2bits)
 add_executable(perf_2bit_vs_2bits src/perf_2_bit_vs_2_bits.cpp)
 target_link_libraries(perf_2bit_vs_2bits)
 
-add_executable(perf_onednn src/perf_onednn.cpp)
-target_link_libraries(perf_onednn dnnl)
 
-add_executable(perf_blis src/perf_blis.cpp)
-target_link_libraries(perf_blis ${BLIS_LIB})
+option(USE_ONEDNN "Enable onednn library" OFF)
+if(USE_ONEDNN)
+  add_subdirectory(external/oneDNN)
+  include_directories(${PROJECT_SOURCE_DIR}/external/oneDNN)
 
-add_executable(perf_fbgemm src/perf_fbgemm.cpp)
-target_link_libraries(perf_fbgemm fbgemm)
+  set(DNNL_LIBRARY_TYPE "STATIC")
+  set(DNNL_CPU_RUNTIME "OMP")
+  set(DNNL_ARCH_OPT_FLAGS "${CMAKE_CXX_FLAGS}")
+  set(DNNL_ENABLE_PRIMITIVE_CACHE "ON")
+  set(ONEDNN_ENABLE_MAX_CPU_ISA "ON")
+  set(DNNL_BUILD_TESTS "OFF")
+  set(DNNL_BUILD_EXAMPLES "OFF")
+  add_executable(perf_onednn src/perf_onednn.cpp)
+  target_link_libraries(perf_onednn dnnl)
+endif()
+
+option(USE_BLIS "Enable blis library" OFF)
+if(USE_BLIS)
+  set(BLIS_DIR ./blis)
+  include_directories(${BLIS_DIR}/include/blis)
+  link_directories(${BLIS_DIR}/lib)
+  find_library(BLIS_LIB NAMES blis PATHS ${BLIS_DIR}/lib)
+  add_executable(perf_blis src/perf_blis.cpp)
+  target_link_libraries(perf_blis ${BLIS_LIB})
+endif()
+
+option(USE_FBGEMM "Enable fbgemm library" OFF)
+
+if(USE_FBGEMM)
+  add_subdirectory(external/FBGEMM)
+  include_directories(${PROJECT_SOURCE_DIR}/external/FBGEMM)
+
+  add_executable(perf_fbgemm src/perf_fbgemm.cpp)
+  target_link_libraries(perf_fbgemm fbgemm)
+endif()

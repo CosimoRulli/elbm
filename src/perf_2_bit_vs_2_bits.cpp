@@ -3,8 +3,6 @@
 
 #include "parser.hpp"
 #include "utils.hpp"
-// #include "dense_mul.hpp"
-// #include "bin_x_bin_matmul.hpp"
 #include "tuple"
 #include "2_bit_vs_2_bits_kernels.hpp"
 #include "utils.hpp"
