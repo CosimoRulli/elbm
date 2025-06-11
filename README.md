@@ -72,6 +72,25 @@ make -j
 sudo make -j 
 ```
 
+If you find this code useful, please consider citing
+
+```bibtex
+@article{DBLP:journals/isci/NardiniRTV25,
+  author       = {Franco Maria Nardini and
+                  Cosimo Rulli and
+                  Salvatore Trani and
+                  Rossano Venturini},
+  title        = {Neural network compression using binarization and few full-precision
+                  weights},
+  journal      = {Inf. Sci.},
+  volume       = {716},
+  pages        = {122251},
+  year         = {2025},
+  url          = {https://doi.org/10.1016/j.ins.2025.122251},
+}
+
+```
+
 
 
 
